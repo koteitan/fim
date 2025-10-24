@@ -1,6 +1,7 @@
 # CodeGemma FIM (Fill-In-the-Middle) Example
 
 OllamaとCodeGemmaを使用したFIM（Fill-In-the-Middle）のサンプル実装です。
+動作はしましたが、上手くいきませんでした。
 
 ## 環境
 
