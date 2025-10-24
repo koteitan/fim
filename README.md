@@ -1,8 +1,9 @@
-# CodeGemma FIM (Fill-In-the-Middle) Example
+# FIM (Fill-In-the-Middle) with Ollama
 
-OllamaとCodeGemma/StarCoder2を使用したFIM（Fill-In-the-Middle）のサンプル実装です。
+OllamaとCodeLlama/StarCoder2/CodeGemmaを使用したFIM（Fill-In-the-Middle）のサンプル実装です。
 
 **最新の状況:**
+- ✅ **CodeLlama 7B-code + suffix parameter方式で完全成功！** 🎉
 - ✅ **StarCoder2 7B + 手動FIMトークン方式で部分的に成功**
 - ⚠️ CodeGemmaは依然として課題あり
 - 📝 Ollama v0.12.6でテスト済み
@@ -20,9 +21,10 @@ OllamaとCodeGemma/StarCoder2を使用したFIM（Fill-In-the-Middle）のサン
 pip install ollama
 
 # モデルのダウンロード
+ollama pull codellama:7b-code    # ✅ 推奨！両方のテストで完全成功
+ollama pull starcoder2:7b        # ✅ import文補完で成功
 ollama pull codegemma:2b-code
 ollama pull codegemma:7b-code
-ollama pull starcoder2:7b  # FIMで最も成功率が高い
 ```
 
 ## 使用方法
@@ -35,24 +37,27 @@ python3 python/fim.py
 python3 python/chat.py
 ```
 
-## ✅ 成功例（手動FIMトークン方式）
+## ✅ 成功例
 
-**StarCoder2 7B + 手動FIMトークン埋め込みで成功！**
+**CodeLlama 7B-code が両方のテストで完全成功！** 🎉
 
 ### テスト結果サマリー（改善後）
 
 | モデル | 方式 | テスト1<br>import文補完<br>(`fim.py`) | テスト2<br>関数本体補完<br>(`fim_test2.py`) |
 |--------|------|------|------|
+| **CodeLlama 7B-code** | suffix parameter | ✅ **完全成功**<br>`sys` | ✅ **完全成功**<br>`print("Hello, World!")` |
+| **CodeLlama 7B-code** | 手動トークン | ❌ 空の出力 | ❌ 空の出力 |
 | **StarCoder2 7B** | 手動トークン | ✅ **成功**<br>`import sys` | ❌ 空の出力 |
 | **StarCoder2 7B** | suffix parameter | ⚠️ 不完全<br>`from <\|package\|>.version` | ❌ テストなし |
 | **CodeGemma 2B** | 手動トークン | ⚠️ suffixを無視<br>18行の無関係なimport | ⚠️ suffixをコピー<br>`print_hello_world()` |
 | **CodeGemma 7B** | 手動トークン | ❌ 空の出力 | ❌ 空の出力 |
 
-**改善ポイント:**
-- ✅ **手動FIMトークン方式**が最も効果的
-- ✅ **StarCoder2が最も成功率が高い**（import文補完で完全成功）
+**重要な発見:**
+- 🏆 **CodeLlama 7B-codeが最優秀** - 両方のテストで完全成功
+- ✅ **CodeLlamaはsuffix parameter方式と相性が良い**
+- ✅ **StarCoder2は手動トークン方式で成功**（import文のみ）
 - ✅ **temperature=0とstopトークン**が重要
-- ⚠️ タスクによって成功率が異なる（import補完 > 関数本体補完）
+- ⚠️ モデルと方式の組み合わせが重要
 
 ### 具体的な出力例
 
@@ -114,6 +119,12 @@ import sys
 ```
 → ✅ **成功！** suffixのコンテキスト（`sys.exit(0)`）を正しく認識
 
+**CodeLlama 7B-code の出力（suffix parameter方式）:**
+```python
+sys
+```
+→ ✅ **完全成功！** 最もシンプルで正確な出力
+
 ---
 
 #### テスト2: 関数本体の補完
@@ -145,6 +156,13 @@ print("Hello world")
 ```
 (空の出力)
 ```
+
+**CodeLlama 7B-code の出力（suffix parameter方式）:**
+```python
+"""Print "Hello, World!" to the screen."""
+    print("Hello, World!")
+```
+→ ✅ **完全成功！** docstringまで生成（ただし`<EOT>`タグの後に余分なコードあり）
 
 ---
 
@@ -242,7 +260,7 @@ print_hello_world()
 
 ### 🔧 FIMを動作させる方法（改善版）
 
-**推奨設定（StarCoder2 7Bで成功）:**
+#### 方法1: CodeLlama + suffix parameter（最も簡単で成功率が高い） 🏆
 
 ```python
 from ollama import generate
@@ -250,7 +268,31 @@ from ollama import generate
 prefix = 'import '
 suffix = '\nif __name__ == "__main__":\n    sys.exit(0)'
 
-# 手動でFIMトークンを埋め込む（公式推奨）
+# suffix parameterを使用（CodeLlamaで動作）
+response = generate(
+    model='codellama:7b-code',
+    prompt=prefix,
+    suffix=suffix.strip(),
+    options={
+        'num_predict': 128,
+        'temperature': 0,
+        'top_p': 0.9,
+        'stop': ['<EOT>'],  # CodeLlamaのstopトークン
+    },
+)
+
+print(response.response)  # 出力: "sys"
+```
+
+#### 方法2: StarCoder2 + 手動トークン（import文のみ成功）
+
+```python
+from ollama import generate
+
+prefix = 'import '
+suffix = '\nif __name__ == "__main__":\n    sys.exit(0)'
+
+# 手動でFIMトークンを埋め込む
 fim_prompt = f'<fim_prefix>{prefix}<fim_suffix>{suffix}<fim_middle>'
 
 response = generate(
@@ -258,9 +300,9 @@ response = generate(
     prompt=fim_prompt,
     options={
         'num_predict': 128,
-        'temperature': 0,  # 決定的な出力
+        'temperature': 0,
         'top_p': 0.9,
-        'stop': ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<file_sep>'],  # 重要！
+        'stop': ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<file_sep>'],
     },
 )
 
@@ -268,11 +310,11 @@ print(response.response)  # 出力: "\nimport sys"
 ```
 
 **重要なポイント:**
-1. ✅ **手動トークン埋め込み**を使用（`suffix`パラメータではなく）
-2. ✅ **temperature=0** に設定（公式推奨値）
-3. ✅ **stopトークンを必ず指定**（特殊トークンの出力を防止）
-4. ✅ **StarCoder2モデル**を使用（CodeGemmaより成功率が高い）
-5. ⚠️ **タスク選択が重要**（import補完は動作、関数本体は難しい）
+1. 🏆 **CodeLlama 7B-code + suffix parameter**が最も確実（両方のテストで成功）
+2. ✅ **StarCoder2 + 手動トークン**はimport文補完のみ成功
+3. ✅ **temperature=0** に設定（公式推奨値）
+4. ✅ **stopトークンを必ず指定**（モデルごとに異なる）
+5. ⚠️ **モデルと方式の組み合わせが重要**
 
 **コマンドライン例:**
 ```bash

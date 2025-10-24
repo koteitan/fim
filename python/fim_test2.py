@@ -14,7 +14,7 @@ os.environ.setdefault('OLLAMA_HOST', 'http://localhost:11434')
 # コマンドライン引数のパース
 parser = argparse.ArgumentParser(description='FIM Test 2: Function body completion')
 parser.add_argument('--model', '-m',
-                    choices=['codegemma:2b-code', 'codegemma:7b-code', 'starcoder2:3b', 'starcoder2:7b', 'starcoder2:15b'],
+                    choices=['codegemma:2b-code', 'codegemma:7b-code', 'starcoder2:3b', 'starcoder2:7b', 'starcoder2:15b', 'codellama:7b-code', 'codellama:13b-code', 'codellama:34b-code'],
                     default='codegemma:2b-code',
                     help='Model to use for FIM (default: codegemma:2b-code)')
 parser.add_argument('--temp', '-t', type=float, default=0,
@@ -62,10 +62,13 @@ if args.method in ['suffix', 'both']:
 if args.method in ['manual', 'both']:
     print("\n[Method 2] Manual FIM tokens (official recommended)")
 
-    # CodeGemmaとStarCoder2でトークンが異なる
+    # モデルごとにFIMトークンが異なる
     if 'codegemma' in args.model:
         fim_prompt = f'<|fim_prefix|>{prefix}<|fim_suffix|>{suffix}<|fim_middle|>'
         stop_tokens = ['<|file_separator|>', '<|fim_prefix|>', '<|fim_suffix|>', '<|fim_middle|>']
+    elif 'codellama' in args.model:
+        fim_prompt = f'<PRE> {prefix} <SUF>{suffix} <MID>'
+        stop_tokens = ['', '<PRE>', '<SUF>', '<MID>']
     else:  # starcoder2
         fim_prompt = f'<fim_prefix>{prefix}<fim_suffix>{suffix}<fim_middle>'
         stop_tokens = ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<file_sep>']
