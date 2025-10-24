@@ -14,7 +14,9 @@ os.environ.setdefault('OLLAMA_HOST', 'http://localhost:11434')
 # コマンドライン引数のパース
 parser = argparse.ArgumentParser(description='FIM Test 2: Function body completion')
 parser.add_argument('--model', '-m',
-                    choices=['codegemma:2b-code', 'codegemma:7b-code', 'starcoder2:3b', 'starcoder2:7b', 'starcoder2:15b', 'codellama:7b-code', 'codellama:13b-code', 'codellama:34b-code'],
+                    choices=['codegemma:2b-code', 'codegemma:7b-code', 'starcoder2:3b', 'starcoder2:7b', 'starcoder2:15b',
+                             'codellama:7b-code', 'codellama:13b-code', 'codellama:34b-code',
+                             'codellama:7b-python', 'codellama:7b-instruct'],
                     default='codegemma:2b-code',
                     help='Model to use for FIM (default: codegemma:2b-code)')
 parser.add_argument('--temp', '-t', type=float, default=0,

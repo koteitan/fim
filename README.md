@@ -21,7 +21,9 @@ OllamaとCodeLlama/StarCoder2/CodeGemmaを使用したFIM（Fill-In-the-Middle�
 pip install ollama
 
 # モデルのダウンロード
-ollama pull codellama:7b-code    # ✅ 推奨！両方のテストで完全成功
+ollama pull codellama:7b-code    # ✅ 推奨！両方のテストで完全成功（コード補完特化版）
+# ollama pull codellama:7b-python  # Python特化版（参考記事で使用）
+# ollama pull codellama:7b-instruct # Instruct版（参考記事で使用）
 ollama pull starcoder2:7b        # ✅ import文補完で成功
 ollama pull codegemma:2b-code
 ollama pull codegemma:7b-code
@@ -341,7 +343,9 @@ python3 python/chat.py  # 通常のチャットは動作確認済み
 - [Ollama公式テンプレートドキュメント](https://github.com/ollama/ollama/blob/main/docs/template.md) - `.Suffix`パラメータの説明
 
 ### FIM成功例・実装参考
-- [Ollama Blog: Code Llamaのプロンプト方法](https://ollama.com/blog/how-to-prompt-code-llama) - **手動FIMトークン方式の成功例**
+- [Ollama Blog: Code Llamaのプロンプト方法](https://ollama.com/blog/how-to-prompt-code-llama) - **FIMの成功例**
+  - 使用モデル: `codellama:7b-code`, `codellama:7b-instruct`, `codellama:7b-python`
+  - ✅ `codellama:7b-code`で本プロジェクトも成功確認済み
 - [ollamar: generate関数リファレンス](https://hauselin.github.io/ollama-r/reference/generate.html) - suffixパラメータの使用例（R言語）
 
 ### GitHub Issues・ディスカッション
