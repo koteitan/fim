@@ -1,9 +1,9 @@
 # FIM (Fill-In-the-Middle) with Ollama
 
-OllamaとCodeLlama/StarCoder2/CodeGemmaを使用したFIM（Fill-In-the-Middle）のサンプル実装です。
+OllamaとCodeLlama/StarCoder2/CodeGemmaを使用したFIM（Fill-In-the-Middle）のサンプル実装ですが、なかなかうまく動く組み合わせがみつけられていません。
 
 **最新の状況:**
-- ✅ **CodeLlama 7B-code + suffix parameter方式で完全成功！** 🎉
+- ✅ **CodeLlama 7B-code + suffix parameter方式で成功** 
 - ❌ **StarCoder2 7B + 手動FIMトークン方式は失敗**（コンテキスト理解は可だが重複エラー）
 - ⚠️ CodeGemmaは依然として課題あり
 - 📝 Ollama v0.12.6でテスト済み
