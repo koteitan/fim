@@ -26,8 +26,8 @@ parser.add_argument('--method', choices=['suffix', 'manual', 'both'], default='b
 args = parser.parse_args()
 
 # FIM example: complete the function body
-prefix = 'def print_hello_world():\n    '
-suffix = '\n\nprint_hello_world()'
+prefix = 'def gcd(a, b):\n    '
+suffix = '\n\nprint(gcd(48, 18))'
 
 print(f"Model: {args.model}")
 print(f"Temperature: {args.temp}")
@@ -72,7 +72,7 @@ if args.method in ['manual', 'both']:
         fim_prompt = f'<PRE> {prefix} <SUF>{suffix} <MID>'
         stop_tokens = ['', '<PRE>', '<SUF>', '<MID>']
     else:  # starcoder2
-        fim_prompt = f'<fim_prefix>{prefix}<fim_suffix>{suffix}<fim_middle>'
+        fim_prompt = f'<fim_prefix>\n{prefix}<fim_suffix>{suffix}<fim_middle>'
         stop_tokens = ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<file_sep>']
 
     print(f"FIM Prompt: {repr(fim_prompt[:100])}...")
@@ -98,4 +98,4 @@ if args.method in ['manual', 'both']:
         print(f"Error: {e}", file=sys.stderr)
 
 print("\n" + "=" * 60)
-print("Expected: print(\"Hello world\") or similar")
+print("Expected: GCD calculation (e.g., using Euclidean algorithm)")

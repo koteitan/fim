@@ -74,7 +74,7 @@ if args.method in ['manual', 'both']:
         fim_prompt = f'<PRE> {prefix} <SUF>{suffix} <MID>'
         stop_tokens = ['', '<PRE>', '<SUF>', '<MID>']
     else:  # starcoder2
-        fim_prompt = f'<fim_prefix>{prefix}<fim_suffix>{suffix}<fim_middle>'
+        fim_prompt = f'<fim_prefix>\n{prefix}<fim_suffix>{suffix}<fim_middle>'
         stop_tokens = ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<file_sep>']
 
     print(f"FIM Prompt: {repr(fim_prompt[:100])}...")
