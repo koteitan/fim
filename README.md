@@ -347,11 +347,16 @@ python3 python/chat.py  # 通常のチャットは動作確認済み
   - 使用モデル: `codellama:7b-code`, `codellama:7b-instruct`, `codellama:7b-python`
   - ✅ `codellama:7b-code`で本プロジェクトも成功確認済み
 - [ollamar: generate関数リファレンス](https://hauselin.github.io/ollama-r/reference/generate.html) - suffixパラメータの使用例（R言語）
+  - 例で使用: `llama3`, `benzie/llava-phi-3:latest`
 
 ### GitHub Issues・ディスカッション
 - [Ollama Issue #6968: FIMモデルのテンプレート調整](https://github.com/ollama/ollama/issues/6968) - **suffixパラメータ使用時の課題**
+  - 議論されたモデル: `codegemma:2b`, `codegemma:7b`, `codestral`
+  - CodeGemmaが2bと7bで異なるテンプレート（FIM vs Chat）を使用する問題
 - [Ollama Issue #5403: Codestral FIMサポート](https://github.com/ollama/ollama/issues/5403) - テンプレート実装の議論
+  - 議論されたモデル: `codestral:latest`, `mistral`, `mixtral`, `codegemma:2b`
 - [TabbyML Issue #2845: OllamaのFIMプロンプトテンプレート発見](https://github.com/TabbyML/tabby/issues/2845) - 実装のヒント
+  - 議論されたモデル: `deepseek-coder-v2`, `codestral`
 
 ## ファイル構成
 
