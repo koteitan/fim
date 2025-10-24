@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-FIM (Fill-In-the-Middle) Sample for Ollama
+FIM Test 2: Function body completion
 Supports: CodeGemma and StarCoder2
 """
 from ollama import generate
@@ -12,7 +12,7 @@ import argparse
 os.environ.setdefault('OLLAMA_HOST', 'http://localhost:11434')
 
 # コマンドライン引数のパース
-parser = argparse.ArgumentParser(description='FIM (Fill-In-the-Middle) test with Ollama')
+parser = argparse.ArgumentParser(description='FIM Test 2: Function body completion')
 parser.add_argument('--model', '-m',
                     choices=['codegemma:2b-code', 'codegemma:7b-code', 'starcoder2:3b', 'starcoder2:7b', 'starcoder2:15b'],
                     default='codegemma:2b-code',
@@ -23,11 +23,9 @@ parser.add_argument('--method', choices=['suffix', 'manual', 'both'], default='b
                     help='FIM method: suffix (Ollama template), manual (manual tokens), both (default: both)')
 args = parser.parse_args()
 
-# FIM example: complete the missing import statement
-prefix = 'import '
-suffix = '''
-if __name__ == "__main__":
-    sys.exit(0)'''
+# FIM example: complete the function body
+prefix = 'def print_hello_world():\n    '
+suffix = '\n\nprint_hello_world()'
 
 print(f"Model: {args.model}")
 print(f"Temperature: {args.temp}")
@@ -95,6 +93,4 @@ if args.method in ['manual', 'both']:
         print(f"Error: {e}", file=sys.stderr)
 
 print("\n" + "=" * 60)
-print("Expected: 'sys' (or similar context-aware completion)")
-
-
+print("Expected: print(\"Hello world\") or similar")

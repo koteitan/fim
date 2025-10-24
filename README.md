@@ -1,7 +1,11 @@
 # CodeGemma FIM (Fill-In-the-Middle) Example
 
-OllamaとCodeGemmaを使用したFIM（Fill-In-the-Middle）のサンプル実装です。
-動作はしましたが、上手くいきませんでした。
+OllamaとCodeGemma/StarCoder2を使用したFIM（Fill-In-the-Middle）のサンプル実装です。
+
+**最新の状況:**
+- ✅ **StarCoder2 7B + 手動FIMトークン方式で部分的に成功**
+- ⚠️ CodeGemmaは依然として課題あり
+- 📝 Ollama v0.12.6でテスト済み
 
 ## 環境
 
@@ -15,9 +19,10 @@ OllamaとCodeGemmaを使用したFIM（Fill-In-the-Middle）のサンプル実�
 # 依存パッケージのインストール
 pip install ollama
 
-# CodeGemmaモデルのダウンロード
+# モデルのダウンロード
 ollama pull codegemma:2b-code
 ollama pull codegemma:7b-code
+ollama pull starcoder2:7b  # FIMで最も成功率が高い
 ```
 
 ## 使用方法
@@ -30,21 +35,24 @@ python3 python/fim.py
 python3 python/chat.py
 ```
 
-## 現在の問題 ⚠️
+## ✅ 成功例（手動FIMトークン方式）
 
-**OllamaでのFIM（Fill-In-the-Middle）機能が動作しません。**
+**StarCoder2 7B + 手動FIMトークン埋め込みで成功！**
 
-### テスト結果サマリー
+### テスト結果サマリー（改善後）
 
-| モデル | テスト1<br>import文補完<br>(FIM) | テスト2<br>関数本体補完<br>(FIM) | テスト3<br>関数本体補完<br>(FIMなし) |
+| モデル | 方式 | テスト1<br>import文補完<br>(`fim.py`) | テスト2<br>関数本体補完<br>(`fim_test2.py`) |
 |--------|------|------|------|
-| **CodeGemma 2B** | ❌ suffixを無視<br>18行の無関係なimport | ❌ 空の出力 | ✅ 正常動作<br>`print("Hello World")` |
-| **CodeGemma 7B** | ❌ 空の出力 | ❌ 空の出力 | ✅ 正常動作<br>`print('Hello World')`<br>(18回繰り返し) |
-| **StarCoder2 7B** | ❌ suffixを無視<br>無関係な関数定義 | ❌ 空の出力 | ⚠️ 部分的に動作<br>`print_hello_world()` |
+| **StarCoder2 7B** | 手動トークン | ✅ **成功**<br>`import sys` | ❌ 空の出力 |
+| **StarCoder2 7B** | suffix parameter | ⚠️ 不完全<br>`from <\|package\|>.version` | ❌ テストなし |
+| **CodeGemma 2B** | 手動トークン | ⚠️ suffixを無視<br>18行の無関係なimport | ⚠️ suffixをコピー<br>`print_hello_world()` |
+| **CodeGemma 7B** | 手動トークン | ❌ 空の出力 | ❌ 空の出力 |
 
-**結論:**
-- ✅ **FIMなし**: 両モデルとも通常の補完は動作
-- ❌ **FIMあり**: 両モデルともsuffixを完全に無視または空の出力
+**改善ポイント:**
+- ✅ **手動FIMトークン方式**が最も効果的
+- ✅ **StarCoder2が最も成功率が高い**（import文補完で完全成功）
+- ✅ **temperature=0とstopトークン**が重要
+- ⚠️ タスクによって成功率が異なる（import補完 > 関数本体補完）
 
 ### 具体的な出力例
 
@@ -90,15 +98,21 @@ from torch.nn.utils.rnn import pad_sequence
 ```
 → **suffixを無視**、何も生成されない
 
-**StarCoder2 7B の出力:**
+**StarCoder2 7B の出力（suffix parameter方式）:**
 ```python
 
 
-def hello():
-    print("hello")
+from <|package|>.version import __version__
 
 ```
-→ **suffixを無視**、無関係な関数定義
+→ **不完全**、特殊トークンが含まれる
+
+**StarCoder2 7B の出力（手動トークン方式）:**
+```python
+
+import sys
+```
+→ ✅ **成功！** suffixのコンテキスト（`sys.exit(0)`）を正しく認識
 
 ---
 
@@ -226,6 +240,49 @@ print_hello_world()
 - モデルの量子化/変換時にFIM機能が失われた可能性
 - Ollama API側のバグまたは未実装機能
 
+### 🔧 FIMを動作させる方法（改善版）
+
+**推奨設定（StarCoder2 7Bで成功）:**
+
+```python
+from ollama import generate
+
+prefix = 'import '
+suffix = '\nif __name__ == "__main__":\n    sys.exit(0)'
+
+# 手動でFIMトークンを埋め込む（公式推奨）
+fim_prompt = f'<fim_prefix>{prefix}<fim_suffix>{suffix}<fim_middle>'
+
+response = generate(
+    model='starcoder2:7b',
+    prompt=fim_prompt,
+    options={
+        'num_predict': 128,
+        'temperature': 0,  # 決定的な出力
+        'top_p': 0.9,
+        'stop': ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<file_sep>'],  # 重要！
+    },
+)
+
+print(response.response)  # 出力: "\nimport sys"
+```
+
+**重要なポイント:**
+1. ✅ **手動トークン埋め込み**を使用（`suffix`パラメータではなく）
+2. ✅ **temperature=0** に設定（公式推奨値）
+3. ✅ **stopトークンを必ず指定**（特殊トークンの出力を防止）
+4. ✅ **StarCoder2モデル**を使用（CodeGemmaより成功率が高い）
+5. ⚠️ **タスク選択が重要**（import補完は動作、関数本体は難しい）
+
+**コマンドライン例:**
+```bash
+# StarCoder2で手動トークン方式（推奨）
+python3 python/fim.py -m starcoder2:7b --method manual
+
+# 両方の方式を比較
+python3 python/fim.py -m starcoder2:7b --method both
+```
+
 ### 通常のコード補完は動作
 
 FIMは動作しませんが、通常のコード補完（prefixのみ）は正常に動作します：
@@ -235,13 +292,28 @@ python3 python/chat.py  # 通常のチャットは動作確認済み
 
 ## 参考資料
 
+### 公式ドキュメント
 - [CodeGemma公式ドキュメント](https://ai.google.dev/gemma/docs/codegemma)
 - [Ollama CodeGemmaページ](https://ollama.com/library/codegemma)
 - [CodeGemmaプロンプト構造](https://ai.google.dev/gemma/docs/codegemma/prompt-structure)
+- [Ollama公式テンプレートドキュメント](https://github.com/ollama/ollama/blob/main/docs/template.md) - `.Suffix`パラメータの説明
+
+### FIM成功例・実装参考
+- [Ollama Blog: Code Llamaのプロンプト方法](https://ollama.com/blog/how-to-prompt-code-llama) - **手動FIMトークン方式の成功例**
+- [ollamar: generate関数リファレンス](https://hauselin.github.io/ollama-r/reference/generate.html) - suffixパラメータの使用例（R言語）
+
+### GitHub Issues・ディスカッション
+- [Ollama Issue #6968: FIMモデルのテンプレート調整](https://github.com/ollama/ollama/issues/6968) - **suffixパラメータ使用時の課題**
+- [Ollama Issue #5403: Codestral FIMサポート](https://github.com/ollama/ollama/issues/5403) - テンプレート実装の議論
+- [TabbyML Issue #2845: OllamaのFIMプロンプトテンプレート発見](https://github.com/TabbyML/tabby/issues/2845) - 実装のヒント
 
 ## ファイル構成
 
-- `python/fim.py` - FIMのサンプル実装（公式フォーマット）
+- `python/fim.py` - FIMのサンプル実装（両方の方式をサポート）
+  - `--method manual`: 手動トークン方式（推奨）
+  - `--method suffix`: suffixパラメータ方式
+  - `--method both`: 両方を比較（デフォルト）
+- `python/fim_test2.py` - 関数本体補完のテスト
 - `python/chat.py` - Ollama接続テスト用チャットスクリプト
 - `CLAUDE.md` - プロジェクト固有のルール
 
